@@ -13,13 +13,13 @@ use libc::{self, time_t};
 use std::io;
 use std::mem;
 
-#[cfg(any(target_os = "solaris", target_os = "illumos"))]
+#[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "espidf"))]
 extern "C" {
     static timezone: time_t;
     static altzone: time_t;
 }
 
-#[cfg(any(target_os = "solaris", target_os = "illumos"))]
+#[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "espidf"))]
 fn tzset() {
     extern "C" {
         fn tzset();
@@ -52,7 +52,7 @@ fn tm_to_rust_tm(tm: &libc::tm, utcoff: i32, rust_tm: &mut Tm) {
     rust_tm.tm_utcoff = utcoff;
 }
 
-#[cfg(any(target_os = "nacl", target_os = "solaris", target_os = "illumos"))]
+#[cfg(any(target_os = "nacl", target_os = "solaris", target_os = "illumos", target_os = "espidf"))]
 unsafe fn timegm(tm: *mut libc::tm) -> time_t {
     use std::env::{remove_var, set_var, var_os};
     extern "C" {
@@ -84,7 +84,7 @@ pub fn time_to_local_tm(sec: i64, tm: &mut Tm) {
         if libc::localtime_r(&sec, &mut out).is_null() {
             panic!("localtime_r failed: {}", io::Error::last_os_error());
         }
-        #[cfg(any(target_os = "solaris", target_os = "illumos"))]
+        #[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "espidf"))]
         let gmtoff = {
             tzset();
             // < 0 means we don't know; assume we're not in DST.
@@ -97,7 +97,7 @@ pub fn time_to_local_tm(sec: i64, tm: &mut Tm) {
                 -timezone
             }
         };
-        #[cfg(not(any(target_os = "solaris", target_os = "illumos")))]
+        #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "espidf")))]
         let gmtoff = out.tm_gmtoff;
         tm_to_rust_tm(&out, gmtoff as i32, tm);
     }
@@ -108,7 +108,8 @@ pub fn utc_tm_to_time(rust_tm: &Tm) -> i64 {
         all(target_os = "android", target_pointer_width = "32"),
         target_os = "nacl",
         target_os = "solaris",
-        target_os = "illumos"
+        target_os = "illumos",
+        target_os = "espidf"
     )))]
     use libc::timegm;
     #[cfg(all(target_os = "android", target_pointer_width = "32"))]
