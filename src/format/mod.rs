@@ -734,6 +734,7 @@ pub mod strftime;
 /// This is normally constructed via `format` methods of each date and time type.
 #[cfg(any(feature = "alloc", feature = "std", test))]
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct DelayedFormat<I> {
     /// The date view, if any.
     date: Option<NaiveDate>,
